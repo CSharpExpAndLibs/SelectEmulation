@@ -1,11 +1,12 @@
 #pragma warning(disable : 4996)
 
 #include <Windows.h>
-#include "Select.h"
-
+#include "pch.h"
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Select.h"
 
 static HANDLE currentIn = NULL;
 static HANDLE stdIn = NULL;
@@ -23,6 +24,10 @@ void InitSelect()
 	stdIn = GetStdHandle(STD_INPUT_HANDLE);
 	GetConsoleMode(stdIn, &currentMode);
 	SetConsoleMode(stdIn, ENABLE_PROCESSED_INPUT);
+	char* locale = setlocale(LC_ALL, "ja_JP.utf8");
+	if (locale == NULL) {
+		printf("Locale NOT supported!\n");
+	}
 
 	// 退出セマフォ取得
 	exitSem = CreateSemaphore(NULL, 0, 1, NULL);
@@ -95,12 +100,13 @@ char* ReadLine()
 	}
 }
 
-WCHAR* ReadLinew()
+char* ReadLinew()
 {
+	static char multiStr[sizeof(wcBuffer) * 2];
 	DWORD rdLen = 0;
 	INPUT_RECORD inputRecord[128];
 	memset(wcBuffer, 0, sizeof(wcBuffer));
-
+	memset(multiStr, 0, sizeof(multiStr));
 
 	while (true) {
 		// どちらかのイベントが立つまで待つ
@@ -141,7 +147,8 @@ WCHAR* ReadLinew()
 						wprintf(L"\n");
 						//printf("%s\n", buffer);
 						fflush(stdout);
-						return wcBuffer;
+						wcstombs(multiStr, wcBuffer, rdLen);
+						return multiStr;
 					default:
 						WCHAR wc = inputRecord[i].Event.KeyEvent.uChar.UnicodeChar;
 						if (wc != L'\0') {
@@ -156,8 +163,10 @@ WCHAR* ReadLinew()
 			}
 		}
 		else {
-			wcscpy(wcBuffer, L"exit");
-			return wcBuffer;
+#pragma warning(suppress : 4996)
+			//wcscpy(wcBuffer, L"exit");
+			strcpy(multiStr, "exit");
+			return multiStr;
 		}
 	}
 }

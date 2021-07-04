@@ -100,12 +100,13 @@ char* ReadLine()
 	}
 }
 
-WCHAR* ReadLinew()
+char* ReadLinew()
 {
+	static char multiStr[sizeof(wcBuffer) * 2];
 	DWORD rdLen = 0;
 	INPUT_RECORD inputRecord[128];
 	memset(wcBuffer, 0, sizeof(wcBuffer));
-
+	memset(multiStr, 0, sizeof(multiStr));
 
 	while (true) {
 		// ‚Ç‚¿‚ç‚©‚ÌƒCƒxƒ“ƒg‚ª—§‚Â‚Ü‚Å‘Ò‚Â
@@ -146,7 +147,8 @@ WCHAR* ReadLinew()
 						wprintf(L"\n");
 						//printf("%s\n", buffer);
 						fflush(stdout);
-						return wcBuffer;
+						wcstombs(multiStr, wcBuffer, rdLen);
+						return multiStr;
 					default:
 						WCHAR wc = inputRecord[i].Event.KeyEvent.uChar.UnicodeChar;
 						if (wc != L'\0') {
@@ -162,8 +164,9 @@ WCHAR* ReadLinew()
 		}
 		else {
 #pragma warning(suppress : 4996)
-			wcscpy(wcBuffer, L"exit");
-			return wcBuffer;
+			//wcscpy(wcBuffer, L"exit");
+			strcpy(multiStr, "exit");
+			return multiStr;
 		}
 	}
 }

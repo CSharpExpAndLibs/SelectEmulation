@@ -37,11 +37,11 @@ void Read()
 void Readw()
 {
     while (true) {
-        wprintf(L"Input> ");
-        WCHAR* buff = ReadLinew();
+        printf("Input> ");
+        char* buff = ReadLinew();
         //wprintf(L"[%ls] was input\n", buff);
-        wprintf(L"「%ls」が入力されました\n", buff);
-        if (wcscmp(buff, L"exit") == 0)
+        printf("「%s」が入力されました\n", buff);
+        if (strcmp(buff, "exit") == 0)
             break;
     }
 }
