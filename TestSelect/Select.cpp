@@ -1,7 +1,7 @@
 #pragma warning(disable : 4996)
 
 #include <Windows.h>
-#include "pch.h"
+//#include "pch.h"
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +100,7 @@ char* ReadLine()
 	}
 }
 
-char* ReadLinew()
+char* ReadLinew(DWORD *len)
 {
 	static char multiStr[sizeof(wcBuffer) * 2];
 	DWORD rdLen = 0;
@@ -147,7 +147,7 @@ char* ReadLinew()
 						wprintf(L"\n");
 						//printf("%s\n", buffer);
 						fflush(stdout);
-						wcstombs(multiStr, wcBuffer, rdLen);
+						*len = wcstombs(multiStr, wcBuffer, rdLen);
 						return multiStr;
 					default:
 						WCHAR wc = inputRecord[i].Event.KeyEvent.uChar.UnicodeChar;
@@ -166,6 +166,7 @@ char* ReadLinew()
 #pragma warning(suppress : 4996)
 			//wcscpy(wcBuffer, L"exit");
 			strcpy(multiStr, "exit");
+			*len = 4;
 			return multiStr;
 		}
 	}

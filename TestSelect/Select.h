@@ -4,7 +4,7 @@
 extern "C" {
 	void InitSelect();
 	char* ReadLine();
-	char* ReadLinew();
+	char* ReadLinew(DWORD* len);
 	void SignaleToExit();
 	void TermSelect();
 }

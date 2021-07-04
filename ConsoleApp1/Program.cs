@@ -14,17 +14,20 @@ namespace ConsoleApp1
 
     class Program
     {
-        [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
+        [DllImport("Select", CallingConvention = CallingConvention.Cdecl)]
         extern static void InitSelect();
-        
-        [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
+
+        [DllImport("Select", CallingConvention = CallingConvention.Cdecl)]
+        extern static void TermSelect();
+
+        [DllImport("Select", CallingConvention = CallingConvention.Cdecl)]
         extern static void SignaleToExit();
 
-        [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
-        unsafe extern static char* ReadLine();
+        [DllImport("Select", CallingConvention = CallingConvention.Cdecl)]
+        unsafe extern static char* ReadLine(uint* length);
 
-        [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
-        unsafe extern static void* ReadLinew();
+        [DllImport("Select", CallingConvention = CallingConvention.Cdecl)]
+        unsafe extern static char* ReadLinew(uint* length);
 
         static AutoResetEvent breakThreadTermEvent = new AutoResetEvent(false);
 
@@ -51,6 +54,9 @@ namespace ConsoleApp1
             // BreakThreadを強制終了
             breakThreadTermEvent.Set();
 
+            // Selectをターミネート
+            TermSelect();
+
             Console.WriteLine("何か入力して");
             Console.ReadLine();
         }
@@ -58,20 +64,18 @@ namespace ConsoleApp1
         static string Read()
         {
             byte[] buff1;
+            uint len = 0;
             unsafe
             {
-                uint* buff2 = (uint*)ReadLinew();
-                int count = 0;
-                for (uint* p = buff2; *p++ != 0; count++) ;
-                buff1 = new byte[4 * count];
-                for (int i = 0; i < count; i++)
+                byte* buff2 = (byte*)ReadLinew(&len);
+                // lenに'\0'は含まない
+                buff1 = new byte[len];
+                for (int i = 0; i < len; i++)
                 {
-                    for (int j = 0; j < 4; j++)
-                        buff1[4 * i + j] = (byte)((buff2[i] >> 8 * j) & 0xff);
+                    buff1[i] = buff2[i];
                 }
             }
-            string line = Encoding.Unicode.GetString(buff1);
-
+            string line = Encoding.UTF8.GetString(buff1);
             return line;
         }
 
@@ -108,7 +112,7 @@ namespace ConsoleApp1
                     {
                         breakThreadTermEvent.WaitOne();
                         // 適当なクライアントを作成する
-                        return new TcpClient("", 9999);
+                        return new TcpClient();
                     });
                     TcpClient client =
                         Task.WhenAny<TcpClient>(

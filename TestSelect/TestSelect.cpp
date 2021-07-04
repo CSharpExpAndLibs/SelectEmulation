@@ -36,11 +36,12 @@ void Read()
 
 void Readw()
 {
+    DWORD len = 0;
     while (true) {
         printf("Input> ");
-        char* buff = ReadLinew();
+        char* buff = ReadLinew(&len);
         //wprintf(L"[%ls] was input\n", buff);
-        printf("「%s」が入力されました\n", buff);
+        printf("「%s」が入力されました。len=%d\n", buff, len);
         if (strcmp(buff, "exit") == 0)
             break;
     }

@@ -38,7 +38,7 @@ void InitSelect()
 
 }
 
-char* ReadLine()
+char* ReadLine(DWORD* length)
 {
 	DWORD rdLen = 0;
 	INPUT_RECORD inputRecord[128];
@@ -78,6 +78,7 @@ char* ReadLine()
 						printf("\n");
 						//printf("%s\n", buffer);
 						fflush(stdout);
+						*length = rdLen;
 						return buffer;
 					default:
 						char c = (char)inputRecord[i].Event.KeyEvent.uChar.AsciiChar;
@@ -95,12 +96,13 @@ char* ReadLine()
 		}
 		else {
 			strcpy_s(buffer, sizeof(buffer), "exit");
+			*length = 4;
 			return buffer;
 		}
 	}
 }
 
-char* ReadLinew()
+char* ReadLinew(DWORD* length)
 {
 	static char multiStr[sizeof(wcBuffer) * 2];
 	DWORD rdLen = 0;
@@ -147,7 +149,8 @@ char* ReadLinew()
 						wprintf(L"\n");
 						//printf("%s\n", buffer);
 						fflush(stdout);
-						wcstombs(multiStr, wcBuffer, rdLen);
+#pragma warning(suppress : 4996)
+						*length = wcstombs(multiStr, wcBuffer, sizeof(multiStr));
 						return multiStr;
 					default:
 						WCHAR wc = inputRecord[i].Event.KeyEvent.uChar.UnicodeChar;
@@ -165,7 +168,9 @@ char* ReadLinew()
 		else {
 #pragma warning(suppress : 4996)
 			//wcscpy(wcBuffer, L"exit");
+#pragma warning(suppress : 4996)
 			strcpy(multiStr, "exit");
+			*length = 4;
 			return multiStr;
 		}
 	}
