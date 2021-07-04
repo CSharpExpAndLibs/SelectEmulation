@@ -2,9 +2,9 @@
 #include <stdlib.h>
 
 extern "C" {
-	void Initialize();
+	void InitSelect();
 	char* ReadLine();
 	WCHAR* ReadLinew();
 	void SignaleToExit();
-	void Term();
+	void TermSelect();
 }

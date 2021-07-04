@@ -15,7 +15,7 @@ namespace ConsoleApp1
     class Program
     {
         [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
-        extern static void Initialize();
+        extern static void InitSelect();
         
         [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
         extern static void SignaleToExit();
@@ -23,15 +23,16 @@ namespace ConsoleApp1
         [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
         unsafe extern static char* ReadLine();
 
+        [DllImport("Select", CallingConvention = CallingConvention.StdCall)]
+        unsafe extern static void* ReadLinew();
 
-        static AutoResetEvent breakEvent = new AutoResetEvent(false);
-        static string consoleBuffer = null;
-        static Thread consoleThread = null;
+        static AutoResetEvent breakThreadTermEvent = new AutoResetEvent(false);
+
 
         static void Main(string[] args)
         {
             Console.WriteLine("Main Starts");
-            Initialize();
+            InitSelect();
 
             var t = new Thread(BreakThread);
             t.Start();
@@ -39,6 +40,7 @@ namespace ConsoleApp1
 
             while (true)
             {
+                Console.Write("Input> ");
                 string line = Read();
                 Console.WriteLine($"「{line}」が入力されました");
                 if (line.ToLower() == "exit")
@@ -46,61 +48,31 @@ namespace ConsoleApp1
 
             }
 
+            // BreakThreadを強制終了
+            breakThreadTermEvent.Set();
 
-            if (t.ThreadState == ThreadState.WaitSleepJoin)
-            {
-                t.Abort();
-                t.Join();
-            }
-
-            Console.WriteLine(t.ThreadState.ToString());
             Console.WriteLine("何か入力して");
             Console.ReadLine();
         }
-
-        static AutoResetEvent inputEvent = null;
-        static AutoResetEvent readyEvent = null;
 
         static string Read()
         {
             byte[] buff1;
             unsafe
             {
-                char* buff2 = ReadLine();
+                uint* buff2 = (uint*)ReadLinew();
                 int count = 0;
-                for (; *buff2++ != '\0'; count++) ;
-                buff1 = new byte[count];
-                for (int i = 0; i < count; count++)
-                    buff1[i] = (byte)buff2[i];
-            }
-            string line = Encoding.UTF8.GetString(buff1);
-
-            return line;
-        }
-
-
-        static void HandleConsole(object evts)
-        {
-            Console.WriteLine("Console Thread Start");
-            var events = (AutoResetEvent[])evts;
-
-            try
-            {
-                while (true)
+                for (uint* p = buff2; *p++ != 0; count++) ;
+                buff1 = new byte[4 * count];
+                for (int i = 0; i < count; i++)
                 {
-                    Console.Write("Input> ");
-                    var line = Console.ReadLine();
-                    consoleBuffer = line;
-                    events[0].Set();
-                    events[1].WaitOne();
+                    for (int j = 0; j < 4; j++)
+                        buff1[4 * i + j] = (byte)((buff2[i] >> 8 * j) & 0xff);
                 }
             }
-            catch (ThreadAbortException e)
-            {
-                Console.WriteLine("--- Console Thread got Abort! ---");
-            }
+            string line = Encoding.Unicode.GetString(buff1);
 
-            Thread.Yield();
+            return line;
         }
 
         static void BreakThread()
@@ -131,9 +103,24 @@ namespace ConsoleApp1
 
                     // Perform a blocking call to accept requests.
                     // You could also use server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClientAsync().Result;
+                    var acceptTask = server.AcceptTcpClientAsync();
+                    var dummy = Task.Run<TcpClient>(() =>
+                    {
+                        breakThreadTermEvent.WaitOne();
+                        // 適当なクライアントを作成する
+                        return new TcpClient("", 9999);
+                    });
+                    TcpClient client =
+                        Task.WhenAny<TcpClient>(
+                            new Task<TcpClient>[] { acceptTask, dummy }).
+                            Result.Result;
+                    if (!client.Connected)
+                    {
+                        Console.WriteLine("BreakThread終了");
+                        break;
+                    }
                     Console.WriteLine("Connected!");
-
+                    
                     // Get a stream object for reading and writing
                     NetworkStream stream = client.GetStream();
 
@@ -155,6 +142,7 @@ namespace ConsoleApp1
                     if (rcvStr.ToLower() == "exit")
                     {
                         SignaleToExit();
+                        breakThreadTermEvent.Set();
                         break;
                     }
                 }

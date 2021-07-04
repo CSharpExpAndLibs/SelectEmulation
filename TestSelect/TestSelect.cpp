@@ -1,5 +1,7 @@
 ﻿// TestSelect.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
 //
+// このプロジェクトでSelect.cppのデバッグを行った。コンソール入力系は日本語含めてほぼOK
+// 後は、Semaphoreで中止するデモをTcpClientから接続する。
 
 #include <Windows.h>
 
@@ -47,18 +49,18 @@ void Readw()
 int main()
 {
 
-    std::cout << "Hello World!\n";
-    Initialize();
+    InitSelect();
 
     char* locale = setlocale(LC_ALL, "ja_JP.utf8");
     if (locale == NULL) {
         printf("Locale NOT supported!\n");
     }
+    printf("sizeof(wchar)=%d\n", sizeof(wchar_t));
 
     //Read();
     Readw();
 
-    Term();
+    TermSelect();
     printf("Input Something\n");
     char buffer[256];
     fgets(buffer, sizeof(buffer), stdin);

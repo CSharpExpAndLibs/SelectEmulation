@@ -16,7 +16,7 @@ static DWORD currentMode = 0;
 char buffer[256];
 WCHAR wcBuffer[256];
 
-void Initialize()
+void InitSelect()
 {
 
 	// •W€“ü—Í‚Ìƒnƒ“ƒhƒ‹‚ğæ“¾
@@ -162,7 +162,7 @@ WCHAR* ReadLinew()
 	}
 }
 
-void Term()
+void TermSelect()
 {
 	SetConsoleMode(stdIn, currentMode);
 }

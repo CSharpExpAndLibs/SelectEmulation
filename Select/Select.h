@@ -1,8 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
+#pragma once
+
+#ifdef SELECT_EXPORTS
+#define SELECT_API __declspec(dllexport)
+#else
+#define SELECT_API __declspec(dllimport)
+#endif
 
 extern "C" {
-	void Initialize();
-	char* ReadLine();
-	void SignaleToExit();
+	SELECT_API void InitSelect();
+	SELECT_API char* ReadLine();
+	SELECT_API WCHAR* ReadLinew();
+	SELECT_API void SignaleToExit();
+	SELECT_API void TermSelect();
 }
